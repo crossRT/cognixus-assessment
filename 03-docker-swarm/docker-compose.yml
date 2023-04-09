@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  my-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PORT=1234
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    image: assessment-ray-nodejs-app:latest
+    ports:
+      - "1234:1234"

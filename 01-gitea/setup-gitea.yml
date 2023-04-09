@@ -1,0 +1,86 @@
+- hosts: all
+  become: yes
+  name: setup-gitea-server
+  vars:
+    swap_file_size_mb: "4096"
+    GITEA:
+      data_directory: "/data/gitea"
+      IMAGE: gitea/gitea:1.19.0
+
+  roles:
+    - geerlingguy.swap
+  tasks:
+    # install docker engine
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+      register: result
+      until: result is not failed
+      retries: 5
+      delay: 5
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+          - unzip
+        state: latest
+        update_cache: true
+      register: result
+      until: result is not failed
+      retries: 5
+      delay: 5
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu {{ansible_distribution_release}} stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+
+    # done - install docker engine
+
+    # install Gitea
+    - name: Pull gitea Docker image
+      community.docker.docker_image:
+        name: "{{ GITEA['IMAGE'] }}"
+        source: pull
+
+    - name: Create gitea container
+      community.docker.docker_container:
+        name: "gitea"
+        image: "{{ GITEA['IMAGE'] }}"
+        state: started
+        restart_policy: "always"
+        ports:
+          - "3000:3000"
+          - "222:22"
+        env:
+          USER_UID: "1000"
+          USER_GID: "1000"
+        volumes:
+          - "{{ GITEA['data_directory'] }}:/data"
+          - /etc/timezone:/etc/timezone:ro
+          - /etc/localtime:/etc/localtime:ro
+    # done - install gitea
