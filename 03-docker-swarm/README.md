@@ -14,4 +14,4 @@ curl http://localhost:1234/
 ```
 
 # Load Balance traffic
-In order to see the traffic load balanced, you must now use any broswer. It's because most of the browsers sending `Connection: keep-alive` in the request header.
+In order to see the traffic load balanced, you must not use any broswer. It's because most of the browsers sending `Connection: keep-alive` in the request header.
